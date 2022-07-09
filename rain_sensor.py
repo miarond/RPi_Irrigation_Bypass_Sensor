@@ -25,10 +25,8 @@ def set_relay_no_state(state):
     logging.info(f'Requesting Relay Normally Open (NO) state set to {state}.\n')
     if state:
         gpio.output(signal, True)
-        #signal_pin.on()
     else:
         gpio.output(signal, False)
-        #signal_pin.off()
     logging.info(f'Signal pin ({signal}) state is: {gpio.input(signal)} (0 is Off/Low, 1 is On/High)\n')
 
 
@@ -40,6 +38,4 @@ def check_state(pin):
 
 def cleanup():
     logging.info('Requesting GPIO cleanup.\n')
-    #signal_pin.close()
-    #relay_no_pin.close()
     gpio.cleanup()
