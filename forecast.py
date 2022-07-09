@@ -8,6 +8,7 @@ import rain_sensor
 from dotenv import load_dotenv
 
 load_dotenv()
+log_level = os.getenv('RAIN_SENSOR_LOG', 'INFO')
 
 def log_setup(log_level):
     logging.basicConfig(format='%(asctime)s - %(levelname)s - %(message)s', datefmt='%c')
