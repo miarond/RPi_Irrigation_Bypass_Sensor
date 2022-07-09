@@ -3,6 +3,9 @@ Description=RPi Irrigation Bypass Sensor
 After=network.target
 
 [Service]
+Environment=FLASK_APP=/home/pi/rain_sensor/app.py
+Environment=FLASK_RUN_HOST=10.20.30.90
+Environment=FLASK_RUN_PORT=80
 ExecStart=/usr/local/bin/flask run /home/pi/rain_sensor/app.py
 ExecStop=/usr/bin/python3 /home/pi/rain_sensor/gpio_cleanup.py
 Restart=on-abnormal
