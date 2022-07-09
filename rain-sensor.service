@@ -1,0 +1,14 @@
+[Unit]
+Description=RPi Irrigation Bypass Sensor
+After=network.target
+
+[Service]
+ExecStart=/usr/local/bin/flask run /home/pi/rain_sensor/app.py
+ExecStop=/usr/bin/python3 /home/pi/rain_sensor/gpio_cleanup.py
+Restart=on-abnormal
+RestartSec=15s
+KillMode=process
+TimeoutSec=infinity
+
+[Install]
+WantedBy=graphical.target
