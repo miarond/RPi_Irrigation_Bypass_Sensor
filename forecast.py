@@ -153,7 +153,6 @@ def change_bypass_state(irr_state):
     check_url = f'{base_url}/check-state'
     change_url = f'{base_url}/change-state'
 
-    response = requests.get(check_url)
     current = check_api(check_url)
     if irr_state:
         if current == 0:
@@ -190,7 +189,8 @@ def check_api(url):
 
 def change_api(url, state):
     payload = '{"status": {state}}'
-    response = requests.post(url, data=payload)
+    headers = {'Content-Type': 'application/json'}
+    response = requests.post(url, data=payload, headers=headers)
     if response.status_code != 200:
         logging.error(f'Change State REST API call to sensor failed with code {response.status_code}: {response.text}\n')
         sys.exit(1)
