@@ -35,6 +35,7 @@ intervals = int(os.getenv('OWM_3H_INTERVALS', '8'))
 cnt = os.getenv('OWM_CNT', '40')
 base_url = os.getenv('OWM_URL', 'https://api.openweathermap.org/')
 irr_hour = int(os.getenv('OWN_IRR_HOUR', '0'))
+relay_no = int(os.getenv('RAIN_SENSOR_RELAY_NO_PIN', '23'))
 try:
     old_forecast = json.loads(os.getenv('OWM_FORECAST_DATA', None))
 except Exception:
@@ -147,13 +148,19 @@ def change_bypass_state(irr_state):
     # return Boolean: True if successful, False if unsuccessful
     
     # Check the Relay Normally Open state; 0 is off (irrigation on), 1 is on (irrigation off)
-    current = rain_sensor.check_state(rain_sensor.relay_no)
+    # current = rain_sensor.check_state(rain_sensor.relay_no)
+    base_url = f'http://{os.getenv("FLASK_RUN_HOST")}:{os.getenv("FLASK_RUN_PORT")}'
+    check_url = f'{base_url}/check-state'
+    change_url = f'{base_url}/change-state'
+
+    response = requests.get(check_url)
+    current = check_api(check_url)
     if irr_state:
         if current == 0:
             return True
         else:
-            rain_sensor.set_relay_no_state(False)
-            current = rain_sensor.check_state(rain_sensor.relay_no)
+            change_api(change_url, False)
+            current = check_api(check_url)
             if current == 0:
                 return True
             else:
@@ -161,8 +168,8 @@ def change_bypass_state(irr_state):
                 return False
     else:
         if current == 0:
-            rain_sensor.set_relay_no_state(True)
-            current = rain_sensor.check_state(rain_sensor.relay_no)
+            change_api(change_url, True)
+            current = check_api(check_url)
             if current == 0:
                 logging.critical(f'Relay state failed to change, current state is: {current}\n')
                 return False
@@ -170,6 +177,25 @@ def change_bypass_state(irr_state):
                 return True
         else:
             return True
+
+
+def check_api(url):
+    response = requests.get(url)
+    if response.status_code != 200:
+        logging.error(f'Check State REST API call to sensor failed with code {response.status_code}: {response.text}\n')
+        sys.exit(1)
+    else:
+        return response.text
+
+
+def change_api(url, state):
+    payload = '{"status": {state}}'
+    response = requests.post(url, data=payload)
+    if response.status_code != 200:
+        logging.error(f'Change State REST API call to sensor failed with code {response.status_code}: {response.text}\n')
+        sys.exit(1)
+    else:
+        return response.text
 
 
 if __name__ == '__main__':
