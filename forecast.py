@@ -100,35 +100,39 @@ def eval_bypass_logic(irr_state):
     # Evaluates whether rain has occurred within 12 hours of the next irrigation event, sets status accordingly
     time_now = dt.datetime.now()
     
+    # If evaluated forecast calls for rain and irrigation should be bypassed, proceed.
+    if irr_state is False:
+        return irr_state
+
     # Check if this is even or odd day
-    if irr_even_odd is None:
-        # If we're on an irrigation day, check if irrigation hour has passed
+    if irr_even_odd is None: # If NO even/odd scheduling specified (if we irrigate every day), proceed
+        # Check if irrigation hour has passed
         if time_now.hour < irr_hour:
-            if not irr_state:
-                    return irr_state
+            # Check for old forecast data, evalute if it rained during the last stored forecast
+            if old_forecast is not None:
+                for item in old_forecast:
+                    if int(item[0]) >= precip_thresh:
+                        logging.info(f'Overriding irrigation status based on old forecast data: {item}(UTC)\n')
+                        return False
             else:
+                return irr_state
+        else:
+            return irr_state
+    else:
+        # If we're on an irrigation day, check if irrigation hour has passed
+        if time_now.day % 2 == irr_even_odd:
+            if time_now.hour < irr_hour:
                 # Check for old forecast data, evalute if it rained during the last stored forecast
                 if old_forecast is not None:
                     for item in old_forecast:
                         if int(item[0]) >= precip_thresh:
                             logging.info(f'Overriding irrigation status based on old forecast data: {item}(UTC)\n')
                             return False
-                return True
-    else:
-        # If we're on an irrigation day, check if irrigation hour has passed
-        if time_now.day % 2 == irr_even_odd:
-            if time_now.hour < irr_hour:
-                if not irr_state:
-                    return irr_state
                 else:
-                    # Check for old forecast data, evalute if it rained during the last stored forecast
-                    if old_forecast is not None:
-                        for item in old_forecast:
-                            if int(item[0]) >= precip_thresh:
-                                logging.info(f'Overriding irrigation status based on old forecast data: {item}(UTC)\n')
-                                return False
-                    return True
-
+                    return irr_state
+        else:
+            logging.warning(f'ENV Variable "OWM_IRR_EVEN_ODD" is not set to 0 or 1. Bypass logic not applied.\n')
+            return irr_state
 
 
 def set_bypass_env(irr_state):
