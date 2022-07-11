@@ -7,7 +7,7 @@ import datetime as dt
 from dotenv import load_dotenv
 
 load_dotenv()
-log_level = os.getenv('RAIN_SENSOR_LOG', 'INFO')
+log_level = os.getenv('RAIN_SENSOR_LOG', 'INFO').lower()
 
 def log_setup(log_level):
     logging.basicConfig(format='%(asctime)s - %(levelname)s - %(message)s', datefmt='%c')
@@ -23,8 +23,8 @@ def log_setup(log_level):
         else:
             logging.basicConfig(level=logging.CRITICAL)
     else:
-        print('Logging level set to invalid value; defaulting to ERROR.\n')
-        logging.basicConfig(level=logging.ERROR)
+        print('Logging level set to invalid value; defaulting to INFO.\n')
+        logging.basicConfig(level=logging.INFO)
 
 appid = os.getenv('OWM_APPID')
 units = os.getenv('OWM_UNITS', 'imperial') #'standard', 'metric', or 'imperial'
@@ -154,21 +154,22 @@ def change_bypass_state(irr_state):
 
     current = check_api(check_url)
     if irr_state:
-        if current == 0:
+        if current == 'ON':
             return True
-        else:
-            change_api(change_url, False)
-            current = check_api(check_url)
-            if current == 0:
+        elif current == 'OFF':
+            current = change_api(change_url, True)
+            if current == 'ON':
                 return True
             else:
                 logging.critical(f'Relay state failed to change, current state is: {current}\n')
                 return False
+        else:
+            logging.critical(f'Relay state failed to change, current state is: {current}\n')
+            return False
     else:
-        if current == 0:
-            change_api(change_url, True)
-            current = check_api(check_url)
-            if current == 0:
+        if current == 'ON' or current == 'UNKNOWN':
+            current = change_api(change_url, False)
+            if current == 'ON' or current == 'UNKNOWN':
                 logging.critical(f'Relay state failed to change, current state is: {current}\n')
                 return False
             else:
@@ -189,8 +190,7 @@ def check_api(url):
 def change_api(url, state):
     payload = {"status": state}
     headers = {'Content-Type': 'application/json'}
-    response = requests.post(url, data=json.dumps(payload)
-    , headers=headers)
+    response = requests.post(url, data=json.dumps(payload), headers=headers)
     if response.status_code != 200:
         logging.error(f'Change State REST API call to sensor failed with code {response.status_code}: {response.text}\n')
         sys.exit(1)
