@@ -130,6 +130,8 @@ def eval_bypass_logic(irr_state):
                             return False
                 else:
                     return irr_state
+            else:
+                return irr_state
         else:
             logging.warning(f'ENV Variable "OWM_IRR_EVEN_ODD" is not set to 0 or 1. Bypass logic not applied.\n')
             return irr_state
