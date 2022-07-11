@@ -4,7 +4,6 @@ import json
 import logging
 import requests
 import datetime as dt
-import rain_sensor
 from dotenv import load_dotenv
 
 load_dotenv()
@@ -188,7 +187,7 @@ def check_api(url):
 
 
 def change_api(url, state):
-    payload = '{"status": {state}}'
+    payload = json.dumps({"status": {state}})
     headers = {'Content-Type': 'application/json'}
     response = requests.post(url, data=payload, headers=headers)
     if response.status_code != 200:
