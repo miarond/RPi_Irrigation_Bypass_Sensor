@@ -198,7 +198,7 @@ def change_api(url, state):
 
 
 if __name__ == '__main__':
-    log_setup()
+    log_setup(log_level)
     data = get_forecast()
     irr_state = eval_forecast(data)
     if not irr_state:
