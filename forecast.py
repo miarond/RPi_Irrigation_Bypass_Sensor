@@ -187,9 +187,10 @@ def check_api(url):
 
 
 def change_api(url, state):
-    payload = json.dumps({"status": {state}})
+    payload = {"status": state}
     headers = {'Content-Type': 'application/json'}
-    response = requests.post(url, data=payload, headers=headers)
+    response = requests.post(url, data=json.dumps(payload)
+    , headers=headers)
     if response.status_code != 200:
         logging.error(f'Change State REST API call to sensor failed with code {response.status_code}: {response.text}\n')
         sys.exit(1)
