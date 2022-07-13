@@ -121,6 +121,9 @@ def eval_override_logic(irr_state):
     if irr_state is False:
         return irr_state
 
+    # Get current UTC time
+    time_now = dt.datetime.now(dt.timezone.utc)
+
     # Check if this is even or odd day
     if irr_even_odd is None: # If NO even/odd scheduling specified (if we irrigate every day), proceed
         # Check if irrigation hour has passed
