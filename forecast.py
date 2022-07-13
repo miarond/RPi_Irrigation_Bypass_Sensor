@@ -1,3 +1,4 @@
+# import pdb; pdb.set_trace()
 import os
 import sys
 import json
@@ -5,26 +6,39 @@ import logging
 import requests
 import datetime as dt
 from dotenv import load_dotenv
+from tinydb import TinyDB, where
 
 load_dotenv()
-log_level = os.getenv('RAIN_SENSOR_LOG', 'INFO').lower()
 
-def log_setup(log_level):
-    logging.basicConfig(format='%(asctime)s - %(levelname)s - %(message)s', datefmt='%c')
+def log_setup():
+    log_level = os.getenv('RAIN_SENSOR_LOG', 'INFO').lower()
+    log_format = '%(asctime)s - %(levelname)s: %(message)s'
+    date_format = '%c'
     if log_level in ['debug', 'info', 'warning', 'error', 'critical']:
         if log_level == 'debug':
-            logging.basicConfig(level=logging.DEBUG)
+            logging.basicConfig(format=log_format, datefmt=date_format, stream=sys.stdout, level=logging.DEBUG)
         elif log_level == 'info':
-            logging.basicConfig(level=logging.INFO)
+            logging.basicConfig(format=log_format, datefmt=date_format, stream=sys.stdout, level=logging.INFO)
         elif log_level == 'warning':
-            logging.basicConfig(level=logging.WARNING)
+            logging.basicConfig(format=log_format, datefmt=date_format, stream=sys.stdout, level=logging.WARNING)
         elif log_level == 'error':
-            logging.basicConfig(level=logging.ERROR)
+            logging.basicConfig(format=log_format, datefmt=date_format, stream=sys.stdout, level=logging.ERROR)
         else:
-            logging.basicConfig(level=logging.CRITICAL)
+            logging.basicConfig(format=log_format, datefmt=date_format, stream=sys.stdout, level=logging.CRITICAL)
     else:
         print('Logging level set to invalid value; defaulting to INFO.\n')
-        logging.basicConfig(level=logging.INFO)
+        logging.basicConfig(format=log_format, datefmt=date_format, stream=sys.stdout, level=logging.INFO)
+    logging.info(f'Logging set to level: {log_level}\n')
+    return
+
+log_setup()
+
+db = TinyDB(os.getenv('OWM_DB_FILE', 'db.json'))
+logging.info(f'Opened DB {os.getenv("OWM_DB_FILE", "db.json")}\n')
+logging.debug(f'Old DB data: {db.all()}\n')
+db.drop_tables()
+logging.debug('Flushed old DB data.')
+
 
 appid = os.getenv('OWM_APPID')
 units = os.getenv('OWM_UNITS', 'imperial') #'standard', 'metric', or 'imperial'
@@ -36,14 +50,13 @@ base_url = os.getenv('OWM_URL', 'https://api.openweathermap.org/')
 irr_hour = int(os.getenv('OWN_IRR_HOUR', '0'))
 relay_no = int(os.getenv('RAIN_SENSOR_RELAY_NO_PIN', '23'))
 try:
-    old_forecast = json.loads(os.getenv('OWM_FORECAST_DATA', None))
+    old_forecast = db.search(where('forecast_data').exists())
 except Exception:
     old_forecast = None
 try:
     irr_even_odd = int(os.getenv('OWM_IRR_EVEN_ODD'))
 except (TypeError, ValueError):
     irr_even_odd = None
-
 
 try:
     precip_thresh = float(os.getenv('OWM_THRESHOLD'))
@@ -54,6 +67,16 @@ for item in [appid, lat, lon]:
     if item is None:
         logging.critical(f'Environment Variable OWM_{item}.upper() is required.')
         sys.exit(1)
+logging.debug(f'Global variables: {globals()}\n')
+
+
+def current_utc():
+    return dt.datetime.now(dt.timezone.utc)
+
+
+def convert_dt_string(input):
+    return dt.datetime.fromisoformat(input)
+
 
 def get_forecast():
     api_endpoint = 'data/2.5/forecast'
@@ -77,29 +100,22 @@ def get_forecast():
 
 def eval_forecast(data):
     forecast_list = []
+    irr_state = True
     for forecast in data['list'][0:intervals]:
-        irr_state = True
-        forecast_list.append([forecast['pop'], forecast['dt_txt']])
+        forecast_list.append([forecast['pop'], f'{forecast["dt_txt"]} +0000'])
         if forecast['pop'] > precip_thresh:
-            logging.info(f'Forecast Interval: {forecast["dt_txt"]} UTC\n')
-            logging.info(f'Forecast Probability of Precipitation: {100 * forecast["pop"]}%\n')
             irr_state = False
-        else:
-            logging.info(f'Forecast Interval: {forecast["dt_txt"]} UTC\n')
-            logging.info(f'Forecast Probability of Precipitation: {100 * forecast["pop"]}%\n')
-    os.environ['OWM_FORECAST_DATA'] = str(forecast_list)
-    if not irr_state:
-        return False
-    else:
-        return True
+        logging.info(f'Forecast Interval: {forecast["dt_txt"]} UTC\n')
+        logging.info(f'Forecast Probability of Precipitation: {100 * forecast["pop"]}%\n')
+    db.insert({'forecast_data': forecast_list})
+    logging.debug(f'Inserting forecast data into DB: {forecast_list}\n')
+    return irr_state
 
 
 def eval_bypass_logic(irr_state):
     # params irr_state: Boolean settings for state of Normally Closed Relay
     # return irr_state: Evaluated and possibly updated state setting
     # Evaluates whether rain has occurred within 12 hours of the next irrigation event, sets status accordingly
-    time_now = dt.datetime.now()
-    
     # If evaluated forecast calls for rain and irrigation should be bypassed, proceed.
     if irr_state is False:
         return irr_state
@@ -111,9 +127,14 @@ def eval_bypass_logic(irr_state):
             # Check for old forecast data, evalute if it rained during the last stored forecast
             if old_forecast is not None:
                 for item in old_forecast:
-                    if int(item[0]) >= precip_thresh:
+                    dt_stamp = convert_dt_string(item[1])
+                    time_now = current_utc()
+                    delta = (time_now - dt_stamp).seconds
+                    # Check if precip_threshold was crossed and if the time of that forecast event was less than 12 hours ago
+                    if int(item[0]) >= precip_thresh and delta <= 43200:
                         logging.info(f'Overriding irrigation status based on old forecast data: {item}(UTC)\n')
                         return False
+                return True
             else:
                 return irr_state
         else:
@@ -125,9 +146,14 @@ def eval_bypass_logic(irr_state):
                 # Check for old forecast data, evalute if it rained during the last stored forecast
                 if old_forecast is not None:
                     for item in old_forecast:
-                        if int(item[0]) >= precip_thresh:
+                        dt_stamp = convert_dt_string(item[1]) 
+                        time_now = current_utc()
+                        delta = (time_now - dt_stamp).seconds
+                        # Check if precip_threshold was crossed and if the time of that forecast event was less than 12 hours ago
+                        if int(item[0]) >= precip_thresh and delta <= 43200:
                             logging.info(f'Overriding irrigation status based on old forecast data: {item}(UTC)\n')
                             return False
+                    return True
                 else:
                     return irr_state
             else:
@@ -137,11 +163,10 @@ def eval_bypass_logic(irr_state):
             return irr_state
 
 
-def set_bypass_env(irr_state):
-    result = f'[{irr_state}, {dt.datetime.now().strftime("%Y-%m-%d %H:%M:%S.%f")}]'
-    os.environ['OWM_BYPASS'] = result
+def set_bypass_state(irr_state):
+    result = f'[{irr_state}, {str(dt.datetime.now(dt.timezone.utc).strftime("%Y-%m-%d %H:%M:%S.%f %z"))}]'
+    db.insert({'bypass_state': result})
     logging.debug(f'Forecast bypass state result: {result}\n')
-    logging.info(f'Forecast bypass state ENV variable: {os.getenv("OWM_BYPASS")}\n')
 
 
 def change_bypass_state(irr_state):
@@ -201,16 +226,16 @@ def change_api(url, state):
 
 
 if __name__ == '__main__':
-    log_setup(log_level)
     data = get_forecast()
     irr_state = eval_forecast(data)
     if not irr_state:
         logging.info(f'**** Irrigation Bypass Requested ****\n')
     else:
         logging.info(f'**** Irrigation Enable Requested ****\n')
-    set_bypass_env(irr_state)
+    set_bypass_state(irr_state)
     result = change_bypass_state(irr_state)
     if result:
         logging.info(f'#### Irrigation State Changed ####\n')
     else:
         logging.info(f'!!!! Irrigation State Failed To Change !!!!\n')
+    db.close()
