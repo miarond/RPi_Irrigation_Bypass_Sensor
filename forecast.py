@@ -242,10 +242,10 @@ def send_email(irr_state, override_state, bypass_result):
         logging.warning(f'SMTP Login failed: {e}\n')
         return
     forecast = db.search(where('forecast_data').exists())
-    message = f'Subject: Irrigation Bypass Results\n\n'
-    f'Forecast-predicted irrigation state: {irr_state}\n'
-    f'Evaluated override irrigation state: {bypass_result}\n\n'
-    f'Forecast weather data was: \n{json.dumps(forecast, indent=4)}'
+    message = f'Subject: Irrigation Bypass Results\n\n' \
+        f'Forecast-predicted irrigation state: {irr_state}\n' \
+        f'Evaluated override irrigation state: {bypass_result}\n\n' \
+        f'Forecast weather data was: \n{json.dumps(forecast, indent=4)}'
     for dest in json.loads(os.getenv('OWM_GMAIL_RECIPIENT')):
         send_result = smtp.sendmail(os.getenv('OWM_GMAIL_USER'), dest, message)
         logging.info(f'Email send result was: {send_result}\n')
