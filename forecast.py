@@ -113,7 +113,7 @@ def eval_forecast(data):
     return irr_state
 
 
-def eval_bypass_logic(irr_state):
+def eval_override_logic(irr_state):
     # params irr_state: Boolean settings for state of Normally Closed Relay
     # return irr_state: Evaluated and possibly updated state setting
     # Evaluates whether rain has occurred within 12 hours of the next irrigation event, sets status accordingly
@@ -164,13 +164,13 @@ def eval_bypass_logic(irr_state):
             return irr_state
 
 
-def set_bypass_state(irr_state):
+def db_set_irr_state(irr_state):
     result = f'[{irr_state}, {str(dt.datetime.now(dt.timezone.utc).strftime("%Y-%m-%d %H:%M:%S.%f %z"))}]'
-    db.insert({'bypass_state': result})
+    db.insert({'irr_state': result})
     logging.debug(f'Forecast bypass state result: {result}\n')
 
 
-def change_bypass_state(irr_state):
+def change_sensor_state(irr_state):
     # params irr_state: Boolean setting for state of Normally Closed Relay
     # return Boolean: True if successful, False if unsuccessful
     
@@ -226,7 +226,7 @@ def change_api(url, state):
         return response.text
 
 
-def send_email(irr_state, bypass_result):
+def send_email(irr_state, override_state, bypass_result):
     smtp = smtplib.SMTP('smtp.gmail.com', 587)
     try:
         smtp.starttls()
@@ -238,8 +238,11 @@ def send_email(irr_state, bypass_result):
     except Exception as e:
         logging.warning(f'SMTP Login failed: {e}\n')
         return
-    
-    message = f'Subject: Irrigation Bypass Results\n\nIrrigation requested state was: {irr_state}\nIrrigation bypass attempt was: {bypass_result}'
+    forecast = db.search(where('forecast_data').exists())
+    message = f'Subject: Irrigation Bypass Results\n\n'
+    f'Forecast-predicted irrigation state: {irr_state}\n'
+    f'Evaluated override irrigation state: {bypass_result}\n\n'
+    f'Forecast weather data was: \n{json.dumps(forecast, indent=4)}'
     for dest in json.loads(os.getenv('OWM_GMAIL_RECIPIENT')):
         send_result = smtp.sendmail(os.getenv('OWM_GMAIL_USER'), dest, message)
         logging.info(f'Email send result was: {send_result}\n')
@@ -250,15 +253,17 @@ def send_email(irr_state, bypass_result):
 if __name__ == '__main__':
     data = get_forecast()
     irr_state = eval_forecast(data)
-    if not irr_state:
+    override_state = eval_override_logic(irr_state)
+    # If state is False, disable irrigation is requested
+    if not override_state:
         logging.info(f'**** Irrigation Bypass Requested ****\n')
     else:
         logging.info(f'**** Irrigation Enable Requested ****\n')
-    set_bypass_state(irr_state)
-    result = change_bypass_state(irr_state)
-    send_email(irr_state, result)
+    db_set_irr_state(override_state)
+    result = change_sensor_state(override_state)
     if result:
         logging.info(f'#### Irrigation State Changed ####\n')
     else:
         logging.info(f'!!!! Irrigation State Failed To Change !!!!\n')
+    send_email(irr_state, override_state, result)
     db.close()
