@@ -5,6 +5,7 @@ import json
 import logging
 import requests
 import datetime as dt
+import smtplib
 from dotenv import load_dotenv
 from tinydb import TinyDB, where
 
@@ -225,6 +226,27 @@ def change_api(url, state):
         return response.text
 
 
+def send_email(irr_state, bypass_result):
+    smtp = smtplib.SMTP('smtp.gmail.com', 587)
+    try:
+        smtp.starttls()
+    except Exception as e:
+        logging.warning(f'SMTP StartTLS failed: {e}\n')
+        return
+    try:
+        smtp.login(os.getenv('OWM_GMAIL_USER'), os.getenv('OWM_GMAIL_APP_PASSWORD'))
+    except Exception as e:
+        logging.warning(f'SMTP Login failed: {e}\n')
+        return
+    
+    message = f'Subject: Irrigation Bypass Results\n\nIrrigation requested state was: {irr_state}\nIrrigation bypass attempt was: {bypass_result}'
+    for dest in json.loads(os.getenv('OWM_GMAIL_RECIPIENT')):
+        send_result = smtp.sendmail(os.getenv('OWM_GMAIL_USER'), dest, message)
+        logging.info(f'Email send result was: {send_result}\n')
+    smtp.close()
+    return
+
+
 if __name__ == '__main__':
     data = get_forecast()
     irr_state = eval_forecast(data)
@@ -234,6 +256,7 @@ if __name__ == '__main__':
         logging.info(f'**** Irrigation Enable Requested ****\n')
     set_bypass_state(irr_state)
     result = change_bypass_state(irr_state)
+    send_email(irr_state, result)
     if result:
         logging.info(f'#### Irrigation State Changed ####\n')
     else:
