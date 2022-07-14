@@ -163,7 +163,7 @@ def eval_override_logic(irr_state):
             else:
                 return irr_state
         else:
-            logging.warning(f'ENV Variable "OWM_IRR_EVEN_ODD" is not set to 0 or 1. Bypass logic not applied.\n')
+            logging.warning(f'Today is not an irrigation day, bypass logic was skipped.\n')
             return irr_state
 
 
