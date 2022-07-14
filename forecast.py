@@ -230,6 +230,10 @@ def change_api(url, state):
 
 
 def send_email(irr_state, override_state, bypass_result):
+    # Skip sending email if nothing has changed, and no relay change failure is detected
+    if irr_state == override_state and bypass_result is not False:
+        logging.info(f'Irrigation requested state ({irr_state}) and override state ({override_state}) show no change.\n')
+        return
     smtp = smtplib.SMTP('smtp.gmail.com', 587)
     try:
         smtp.starttls()
