@@ -1,14 +1,24 @@
 # RPi_Irrigation_Bypass_Sensor
 A project using a Raspberry Pi board and Python, which checks the upcoming weather forecast for rain and can enable a bypass on your irrigation controller.
 
+***A Note on Irrigation Systems:***  Not all irrigation controllers are created equal, nor do they all operate in the same way.  I have created this project based on a single example in my own home, which is the "Rain Bird ESP Modular" model.  This controller has a pair of "Sensor" electrical contacts inside, which are devoted to any external rain sensor you might want to connect.  The Rain Bird ESP Module controller sensor system operations on a "Normally Closed" architecture, meaning that the sensor contacts are part of a simple electrical circuit that is normally complete - i.e. the contacts are connected to each other and have continuity.  If the contacts are connected, the irrigation controller follows its normally programmed irrigation cycle.  If that circuit is "broken", it overrides the irrigation cycle programming and your irrigation system will NOT run.  **Please** research the documentation on your irrigation controller before attempting to use this project.  If your irrigation controller sensor system operates on a Normally Closed or Normally Open basis, this project *could* work - though if your controller requires a Normally Open configuration, you will need to swap the pinout on the Relay Output connectors from what is shown in this documentation.  Happy Irrigating!
+
 # Table of Contents
 
 1. [Parts List](#parts-list)
-2. [SD Card Setup](#sd-card-setup)
-3. [Assembly](#assembly)
-4. [Installation](#installation)
-5. [Testing and Troubleshooting](#testing-and-troubleshooting)
-6. [Directory Structure](#directory-structure)
+2. [Raspberry Pi Setup](#raspberry-pi-setup)
+3. [Relay & Wiring Setup](#relay--wiring-setup)
+    1. [Relay Board Preparation](#relay-board-preparation)
+    2. [Rasbperry Pi Wiring](#raspberry-pi-wiring)
+4. [OpenWeathermap API](#openweathermap-api)
+5. [Environment Variables](#environment-variables)
+6. [Software Installation](#software-installation)
+7. [Web Application](#web-application)
+    1. [Web Application Workflow](#web-application-workflow)
+8. [Forecast Script](#forecast-script)
+    1. [Forecast Script Workflow](#forecast-script-workflow)
+9. [Troubleshooting](#troubleshooting)
+10. [Directory Structure](#directory-structure)
 
 ## Parts List
 
