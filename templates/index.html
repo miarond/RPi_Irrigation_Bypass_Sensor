@@ -1,75 +1,78 @@
 <!DOCTYPE html>
 <html>
     <meta name="viewport" content="width=device-width, initial-scale=1">
+    <h2><u>RPi Automation</u></h2>
     <body>
+        <head>
+            <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.2.1/jquery.min.js"></script>
+        </head>
         <style>
-            .switch {
-              position: relative;
-              display: inline-block;
-              width: 60px;
-              height: 34px;
-            }
-            
-            .switch input { 
-              opacity: 0;
-              width: 0;
-              height: 0;
-            }
-            
-            .slider {
-              position: absolute;
-              cursor: pointer;
-              top: 0;
-              left: 0;
-              right: 0;
-              bottom: 0;
-              background-color: #ccc;
-              -webkit-transition: .4s;
-              transition: .4s;
-            }
-            
-            .slider:before {
-              position: absolute;
-              content: "";
-              height: 26px;
-              width: 26px;
-              left: 4px;
-              bottom: 4px;
-              background-color: white;
-              -webkit-transition: .4s;
-              transition: .4s;
-            }
-            
-            input:checked + .slider {
-              background-color: #2196F3;
-            }
-            
-            input:focus + .slider {
-              box-shadow: 0 0 1px #2196F3;
-            }
-            
-            input:checked + .slider:before {
-              -webkit-transform: translateX(26px);
-              -ms-transform: translateX(26px);
-              transform: translateX(26px);
-            }
-            
-            /* Rounded sliders */
-            .slider.round {
-              border-radius: 34px;
-            }
-            
-            .slider.round:before {
-              border-radius: 50%;
+            th, td {
+                padding-top: 5px;
+                padding-bottom: 5px;
+                padding-left: 30px;
+                padding-right: 0px;
             }
         </style>
-        <h1><u>Irrigation Rain Sensor</u></h1>
-        <form>
-            <h3>Irrigation On/Off</h3>
-            <label class="switch">
-                <input type="checkbox" id="on_off_slider" name="Irrigation On/Off">
-                <span class="slider round"></span>
-            </label>
-        </form>
+        <table cellspacing="10">
+            <tr>
+                <th style="text-align:center">
+                    <b><u>Irrigation</u></b>
+                </th>
+                <th style="text-align:center">
+                    <b><u>Current State</u></b>
+                </th>
+            </tr>
+            <tr>
+                <td style="text-align:center">
+                    <button type="button" id="irr-toggle" style="height:35px;width:100px">On/Off</button>
+                </td>
+                <td style="text-align:center">
+                    <div id="status"></div>
+                </td>
+            </tr>
+        </table>
     </body>
+    <script>
+        $(document).ready(function() {
+            $.ajax({
+                url: "/check-state",
+                type: "GET",
+                success: function(response) {
+                    $("#status").html(response);
+                },
+                error: $("#status").html("UNKNOWN")
+            });
+            $("#irr-toggle").click(function() {
+                $.get("/check-state", function(response){
+                    if (response == "OFF")
+                        $.ajax({
+                    	    url: "/change-state",
+                            type: "POST",
+                            data: JSON.stringify({"status": true}),
+                            contentType: "application/json",
+                            success: function(response) {
+                                $("#status").html(response);
+                            },
+                            error: function(xhr) {
+                            //Do Something to handle error
+                            }
+                        });
+                    else
+                        $.ajax({
+                            url: "/change-state",
+                            type: "POST",
+                            data: JSON.stringify({"status": false}),
+                            contentType: "application/json",
+                            success: function(response) {
+                                $("#status").html(response);
+                            },
+                            error: function(xhr) {
+                            //Do Something to handle error
+                            }
+                        });
+                });
+            });
+        });
+    </script>
 </html>
