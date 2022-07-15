@@ -27,16 +27,16 @@ def log_setup():
         else:
             logging.basicConfig(format=log_format, datefmt=date_format, stream=sys.stdout, level=logging.CRITICAL)
     else:
-        print('Logging level set to invalid value; defaulting to INFO.\n')
+        print('Logging level set to invalid value; defaulting to INFO.')
         logging.basicConfig(format=log_format, datefmt=date_format, stream=sys.stdout, level=logging.INFO)
-    logging.info(f'Logging set to level: {log_level}\n')
+    logging.info(f'Logging set to level: {log_level}')
     return
 
 log_setup()
 
 db = TinyDB(os.getenv('OWM_DB_FILE', 'db.json'))
-logging.info(f'Opened DB {os.getenv("OWM_DB_FILE", "db.json")}\n')
-logging.debug(f'Old DB data: {db.all()}\n')
+logging.info(f'Opened DB {os.getenv("OWM_DB_FILE", "db.json")}')
+logging.debug(f'Old DB data: {db.all()}')
 db.drop_tables()
 logging.debug('Flushed old DB data.')
 
@@ -68,7 +68,7 @@ for item in [appid, lat, lon]:
     if item is None:
         logging.critical(f'Environment Variable OWM_{item}.upper() is required.')
         sys.exit(1)
-logging.debug(f'Global variables: {globals()}\n')
+logging.debug(f'Global variables: {globals()}')
 
 
 def current_utc():
@@ -89,11 +89,11 @@ def get_forecast():
         'cnt': cnt
     }
     result = requests.get(base_url + api_endpoint, params=query_params)
-    logging.debug(f'{result.headers}\n')
-    logging.debug(f'{result.json()}\n')
+    logging.debug(f'{result.headers}')
+    logging.debug(f'{result.json()}')
     if result.status_code != 200:
-        logging.error(f'API error encountered, code: {result.status_code}.\n')
-        logging.error(f'Response: {result.text}\n')
+        logging.error(f'API error encountered, code: {result.status_code}.')
+        logging.error(f'Response: {result.text}')
         sys.exit(1)
     else:
         return result.json()
@@ -106,10 +106,10 @@ def eval_forecast(data):
         forecast_list.append([forecast['pop'], f'{forecast["dt_txt"]} +0000'])
         if forecast['pop'] > precip_thresh:
             irr_state = False
-        logging.info(f'Forecast Interval: {forecast["dt_txt"]} UTC\n')
-        logging.info(f'Forecast Probability of Precipitation: {100 * forecast["pop"]}%\n')
+        logging.info(f'Forecast Interval: {forecast["dt_txt"]} UTC')
+        logging.info(f'Forecast Probability of Precipitation: {100 * forecast["pop"]}%')
     db.insert({'forecast_data': forecast_list})
-    logging.debug(f'Inserting forecast data into DB: {forecast_list}\n')
+    logging.debug(f'Inserting forecast data into DB: {forecast_list}')
     return irr_state
 
 
@@ -136,7 +136,7 @@ def eval_override_logic(irr_state):
                     delta = (time_now - dt_stamp).seconds
                     # Check if precip_threshold was crossed and if the time of that forecast event was less than 12 hours ago
                     if int(item[0]) >= precip_thresh and delta <= 43200:
-                        logging.info(f'Overriding irrigation status based on old forecast data: {item}(UTC)\n')
+                        logging.info(f'Overriding irrigation status based on old forecast data: {item}(UTC)')
                         return False
                 return True
             else:
@@ -155,7 +155,7 @@ def eval_override_logic(irr_state):
                         delta = (time_now - dt_stamp).seconds
                         # Check if precip_threshold was crossed and if the time of that forecast event was less than 12 hours ago
                         if int(item[0]) >= precip_thresh and delta <= 43200:
-                            logging.info(f'Overriding irrigation status based on old forecast data: {item}(UTC)\n')
+                            logging.info(f'Overriding irrigation status based on old forecast data: {item}(UTC)')
                             return False
                     return True
                 else:
@@ -163,14 +163,14 @@ def eval_override_logic(irr_state):
             else:
                 return irr_state
         else:
-            logging.warning(f'Today is not an irrigation day, bypass logic was skipped.\n')
+            logging.warning(f'Today is not an irrigation day, bypass logic was skipped.')
             return irr_state
 
 
 def db_set_irr_state(irr_state):
     result = f'[{irr_state}, {str(dt.datetime.now(dt.timezone.utc).strftime("%Y-%m-%d %H:%M:%S.%f %z"))}]'
     db.insert({'irr_state': result})
-    logging.debug(f'Forecast bypass state result: {result}\n')
+    logging.debug(f'Forecast bypass state result: {result}')
 
 
 def change_sensor_state(irr_state):
@@ -192,16 +192,16 @@ def change_sensor_state(irr_state):
             if current == 'ON':
                 return True
             else:
-                logging.critical(f'Relay state failed to change, current state is: {current}\n')
+                logging.critical(f'Relay state failed to change, current state is: {current}')
                 return False
         else:
-            logging.critical(f'Relay state failed to change, current state is: {current}\n')
+            logging.critical(f'Relay state failed to change, current state is: {current}')
             return False
     else:
         if current == 'ON' or current == 'UNKNOWN':
             current = change_api(change_url, False)
             if current == 'ON' or current == 'UNKNOWN':
-                logging.critical(f'Relay state failed to change, current state is: {current}\n')
+                logging.critical(f'Relay state failed to change, current state is: {current}')
                 return False
             else:
                 return True
@@ -212,7 +212,7 @@ def change_sensor_state(irr_state):
 def check_api(url):
     response = requests.get(url)
     if response.status_code != 200:
-        logging.error(f'Check State REST API call to sensor failed with code {response.status_code}: {response.text}\n')
+        logging.error(f'Check State REST API call to sensor failed with code {response.status_code}: {response.text}')
         sys.exit(1)
     else:
         return response.text
@@ -223,7 +223,7 @@ def change_api(url, state):
     headers = {'Content-Type': 'application/json'}
     response = requests.post(url, data=json.dumps(payload), headers=headers)
     if response.status_code != 200:
-        logging.error(f'Change State REST API call to sensor failed with code {response.status_code}: {response.text}\n')
+        logging.error(f'Change State REST API call to sensor failed with code {response.status_code}: {response.text}')
         sys.exit(1)
     else:
         return response.text
@@ -232,18 +232,18 @@ def change_api(url, state):
 def send_email(irr_state, override_state, bypass_result):
     # Skip sending email if nothing has changed, and no relay change failure is detected
     if irr_state == override_state and bypass_result is not False:
-        logging.info(f'Irrigation requested state ({irr_state}) and override state ({override_state}) show no change.\n')
+        logging.info(f'Irrigation requested state ({irr_state}) and override state ({override_state}) show no change.')
         return
     smtp = smtplib.SMTP('smtp.gmail.com', 587)
     try:
         smtp.starttls()
     except Exception as e:
-        logging.warning(f'SMTP StartTLS failed: {e}\n')
+        logging.warning(f'SMTP StartTLS failed: {e}')
         return
     try:
         smtp.login(os.getenv('OWM_GMAIL_USER'), os.getenv('OWM_GMAIL_APP_PASSWORD'))
     except Exception as e:
-        logging.warning(f'SMTP Login failed: {e}\n')
+        logging.warning(f'SMTP Login failed: {e}')
         return
     forecast = db.search(where('forecast_data').exists())
     message = f'Subject: Irrigation Bypass Results\n\n' \
@@ -252,7 +252,7 @@ def send_email(irr_state, override_state, bypass_result):
         f'Forecast weather data was: \n{json.dumps(forecast, indent=4)}'
     for dest in json.loads(os.getenv('OWM_GMAIL_RECIPIENT')):
         send_result = smtp.sendmail(os.getenv('OWM_GMAIL_USER'), dest, message)
-        logging.info(f'Email send result was: {send_result}\n')
+        logging.info(f'Email send result was: {send_result}')
     smtp.close()
     return
 
@@ -263,14 +263,14 @@ if __name__ == '__main__':
     override_state = eval_override_logic(irr_state)
     # If state is False, disable irrigation is requested
     if not override_state:
-        logging.info(f'**** Irrigation Bypass Requested ****\n')
+        logging.info(f'**** Irrigation Bypass Requested ****')
     else:
-        logging.info(f'**** Irrigation Enable Requested ****\n')
+        logging.info(f'**** Irrigation Enable Requested ****')
     db_set_irr_state(override_state)
     result = change_sensor_state(override_state)
     if result:
-        logging.info(f'#### Irrigation State Changed ####\n')
+        logging.info(f'#### Irrigation State Changed ####')
     else:
-        logging.info(f'!!!! Irrigation State Failed To Change !!!!\n')
+        logging.info(f'!!!! Irrigation State Failed To Change !!!!')
     send_email(irr_state, override_state, result)
     db.close()

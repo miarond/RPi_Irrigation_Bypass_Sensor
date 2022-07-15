@@ -9,7 +9,7 @@ port = int(os.getenv('FLASK_APP_PORT', '80'))
 rain_sensor.gpio_setup()
 app = Flask(__name__)
 
-logging.debug(f'GPIO Pins: signal={rain_sensor.signal}, relay_no={rain_sensor.relay_no}\n')
+logging.debug(f'GPIO Pins: signal={rain_sensor.signal}, relay_no={rain_sensor.relay_no}')
 
 def log_setup(log_level):
     logging.basicConfig(format='%(asctime)s - %(levelname)s - %(message)s', datefmt='%c')
@@ -31,34 +31,34 @@ def log_setup(log_level):
 
 @app.route("/", methods=["GET"])
 def index():
-    logging.debug('Rendering index.html template.\n')
+    logging.debug('Rendering index.html template.')
     return render_template("index.html")
 
 
 @app.route("/change-state", methods=["POST"])
 def change_state():
     requested_status = request.json.get('status')
-    logging.info(f'Requested status is: {requested_status}\n')
+    logging.info(f'Requested status is: {requested_status}')
     if requested_status is False:
         rain_sensor.set_relay_no_state(True)
     else:
         rain_sensor.set_relay_no_state(False)
     time.sleep(0.1)
     state = rain_sensor.check_state(rain_sensor.relay_no)
-    logging.debug(f'Current relay state for NO pin: {state}\n')
+    logging.debug(f'Current relay state for NO pin: {state}')
     if state == 0:
         return 'OFF'
     elif state == 1:
         return 'ON'
     else:
-        logging.error('Returned state for relay NO pin was UNKNOWN!\n')
+        logging.error('Returned state for relay NO pin was UNKNOWN!')
         return 'UNKNOWN'
 
 
 @app.route("/check-state", methods=["GET"])
 def check_state():
     state = rain_sensor.check_state(rain_sensor.relay_no)
-    logging.debug(f'Current NO relay state is: {state}\n')
+    logging.debug(f'Current NO relay state is: {state}')
     if state == 0:
         # Relay is in NO state, irrigation is off
         return 'OFF'
