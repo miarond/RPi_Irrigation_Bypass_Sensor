@@ -170,8 +170,8 @@ In this section we'll begin the installation and setup process. We'll start by v
     - `sudo apt-get update`
     - `sudo apt-get install git -y`
 3. Clone this repository to your Raspberry Pi by issuing this command:
-    - `git clone https://github.com/miarond/RPi_Irrigation_Bypass_Sensor.git rain-sensor`
-    - Change directory into the newly created project folder by issuing the command: `cd rain-sensor`
+    - `git clone https://github.com/miarond/RPi_Irrigation_Bypass_Sensor.git rain_sensor`
+    - Change directory into the newly created project folder by issuing the command: `cd rain_sensor`
 4. Edit the following files to add your environment-specific information:
     1. Rename the `default.env` file to `.env` with the command: `mv default.env .env`
     2. Edit the `.env` file and update all of the relevant Environment Variable values.
@@ -247,7 +247,7 @@ The following is a directory tree structure that illustrates the files installed
 /
 └─── home
 |    └─── pi
-|        └─── rain-sensor
+|        └─── rain_sensor
 |             └─── setup.sh
 |             └─── app.py
 |             └─── forecast.py
