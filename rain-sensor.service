@@ -3,7 +3,7 @@ Description=RPi Irrigation Bypass Sensor
 After=network.target
 
 [Service]
-Environment=FLASK_RUN_HOST=10.20.30.90
+Environment=FLASK_RUN_HOST=
 Environment=FLASK_RUN_PORT=80
 WorkingDirectory=/home/pi/rain_sensor
 ExecStart=/usr/local/bin/flask run
