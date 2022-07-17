@@ -32,6 +32,8 @@
                 </td>
             </tr>
         </table>
+        </br>
+        <div id="forecast_state"></div>
     </body>
     <script>
         $(document).ready(function() {
@@ -42,6 +44,14 @@
                     $("#status").html(response);
                 },
                 error: $("#status").html("UNKNOWN")
+            });
+            $.ajax({
+                url: "/forecast",
+                type: "GET",
+                success: function(response) {
+                    $("#forecast_state").html(response);
+                },
+                error: $("#forecast_state").html("UNKNOWN")
             });
             $("#irr-toggle").click(function() {
                 $.get("/check-state", function(response){

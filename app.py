@@ -3,6 +3,8 @@ import logging
 import time
 from flask import Flask, render_template, request
 import rain_sensor
+from tinydb import TinyDB, where
+from tabulate import tabulate
 
 host = os.getenv('FLASK_APP_HOST', '0.0.0.0')
 port = int(os.getenv('FLASK_APP_PORT', '80'))
@@ -65,6 +67,26 @@ def check_state():
     elif state == 1:
         # Relay is in NC state, irrigation is on
         return 'ON'
+
+
+@app.route("/forecast", methods=["GET"])
+def forecast_data():
+    db = TinyDB('db.json')
+    forecast = db.search(where('forecast_data').exists())[0]['forecast_data']
+    state = db.search(where('irr_state').exists())[0]['irr_state']
+    db.close()
+    
+    # Convert to percentage
+    if len(forecast) > 0:
+        result = f'<b>State: </b>{state[0]}</br><b>Date/Time: </b>{state[1]}</br>(Times are in UTC timezone)</br></br>'
+        for item in forecast:
+            item[0] = item[0] * 100
+            #result.append(item)
+    else:
+        return ''
+    data = tabulate(forecast, tablefmt='html', headers=['Precip %', 'Date/Time'], numalign='left', stralign='left')
+    result = result + data
+    return result
 
 
 if __name__ == "__main__":

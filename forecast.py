@@ -168,7 +168,8 @@ def eval_override_logic(irr_state):
 
 
 def db_set_irr_state(irr_state):
-    result = f'[{irr_state}, {str(dt.datetime.now(dt.timezone.utc).strftime("%Y-%m-%d %H:%M:%S.%f %z"))}]'
+    date_time = str(dt.datetime.now(dt.timezone.utc).strftime("%Y-%m-%d %H:%M:%S.%f %z"))
+    result = [irr_state, date_time]
     db.insert({'irr_state': result})
     logging.debug(f'Forecast bypass state result: {result}')
 
@@ -183,6 +184,7 @@ def change_sensor_state(irr_state):
     check_url = f'{base_url}/check-state'
     change_url = f'{base_url}/change-state'
 
+    global current
     current = check_api(check_url)
     if irr_state:
         if current == 'ON':
@@ -229,11 +231,13 @@ def change_api(url, state):
         return response.text
 
 
-def send_email(irr_state, override_state, bypass_result):
+def send_email(override_state, bypass_result):
     # Skip sending email if nothing has changed, and no relay change failure is detected
-    if irr_state == override_state and bypass_result is not False:
-        logging.info(f'Irrigation requested state ({irr_state}) and override state ({override_state}) show no change.')
+    if (current == 'ON' and override_state is True) or (current == 'OFF' and override_state is False):
+        logging.info(f'No change between requested state ({override_state}) and current state ({current}).')
+        logging.info(f'Bypass result was: {bypass_result}')
         return
+        
     smtp = smtplib.SMTP('smtp.gmail.com', 587)
     try:
         smtp.starttls()
@@ -245,7 +249,7 @@ def send_email(irr_state, override_state, bypass_result):
     except Exception as e:
         logging.warning(f'SMTP Login failed: {e}')
         return
-    forecast = db.search(where('forecast_data').exists())
+    forecast = db.search(where('forecast_data').exists())[0]['forecast_data']
     message = f'Subject: Irrigation Bypass Results\n\n' \
         f'Forecast-predicted irrigation state: {irr_state}\n' \
         f'Evaluated override irrigation state: {bypass_result}\n\n' \
