@@ -153,6 +153,7 @@ An example of the API output is located [here](/assets/owm_api_output.json) for 
   - `OWM_GMAIL_USER`: Gmail user account for sending alert emails.
   - `OWM_GMAIL_RECIPIENT`: Email recipients list for alert emails.  This **MUST** be expressed as a Python list in String format, such as this example: '["email1", "email2"]'  (Please note and emulate the placement of both single and double quotation marks)
   - `OWM_GMAIL_APP_PASSWORD`: Application password that you have generated for the sender Gmail account (you can not authenticate using the account's actual password - you MUST generate an application password).
+  - `OWM_DB_FILE`: Name of the TinyDB database file used to store forecast data.  Default is 'db.json'.
   - `RAIN_SENSOR_HOST`: The local IP address of your Raspberry Pi board; used for the `flask run` command.  It is highly recommended NOT to set this value to: "0.0.0.0"
   - `RAIN_SENSOR_PORT`: The local port that Flask should bind to when running the applicaiton.  This should always be set to "80".  If you change this port, you may need to alter the `app.py` and/or `forecast.py` scripts to accomodate the change.
   - `RAIN_SENSOR_LOG`:  Logging level for the Python application and `forecast.py` script.  Valid values are: DEBUG, INFO, WARNING, ERROR, CRITICAL

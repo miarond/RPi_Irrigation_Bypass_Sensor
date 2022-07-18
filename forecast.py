@@ -276,5 +276,5 @@ if __name__ == '__main__':
         logging.info(f'#### Irrigation State Changed ####')
     else:
         logging.info(f'!!!! Irrigation State Failed To Change !!!!')
-    send_email(irr_state, override_state, result)
+    send_email(override_state, result)
     db.close()

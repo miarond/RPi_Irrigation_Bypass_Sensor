@@ -71,7 +71,7 @@ def check_state():
 
 @app.route("/forecast", methods=["GET"])
 def forecast_data():
-    db = TinyDB('db.json')
+    db = TinyDB(os.getenv('OWM_DB_FILE', 'db.json'))
     forecast = db.search(where('forecast_data').exists())[0]['forecast_data']
     state = db.search(where('irr_state').exists())[0]['irr_state']
     db.close()
