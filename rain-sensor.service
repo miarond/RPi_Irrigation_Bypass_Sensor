@@ -5,6 +5,9 @@ After=network.target
 [Service]
 Environment=FLASK_RUN_HOST=
 Environment=FLASK_RUN_PORT=80
+StandardOutput=syslog
+StandardError=syslog
+SyslogIdentifier=rain-sensor
 WorkingDirectory=/home/pi/rain_sensor
 ExecStart=/usr/local/bin/flask run
 ExecStop=/usr/bin/python3 /home/pi/rain_sensor/gpio_cleanup.py
