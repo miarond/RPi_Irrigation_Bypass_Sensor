@@ -42,12 +42,12 @@ A project using a Raspberry Pi board and Python, which checks the upcoming weath
   - ![Image from www.amazon.com](/assets/jumper_wires.jpeg)
 - **OPTIONAL** Splicing wire nuts or lever nuts
   - For combining Ground wires
-- 2-wire electrical wire (18 - 22 guage)
+- 2-wire electrical wire (18 - 22 gauge)
   - For connection to irrigation system
 
 <b><u>Tools needed:</u></b>
 - Soldering iron with fine-tipped point
-- Low lead (60% tin/40% lead) small guage rosin-core solder
+- Low lead (60% tin/40% lead) small gauge rosin-core solder
 - Small gauge wire stripper
 
 <b><u>Bring your own:</u></b>
