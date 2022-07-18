@@ -38,7 +38,7 @@ db = TinyDB(os.getenv('OWM_DB_FILE', 'db.json'))
 logging.info(f'Opened DB {os.getenv("OWM_DB_FILE", "db.json")}')
 logging.debug(f'Old DB data: {db.all()}')
 db.drop_tables()
-logging.debug('Flushed old DB data.')
+logging.info('Flushed old DB data.')
 
 
 appid = os.getenv('OWM_APPID')
