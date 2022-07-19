@@ -19,7 +19,7 @@ sudo updatedb
 echo "Setting up cron job to run the forecast.py script. You will need to configure the scheduled hours (in 24hr format) \
 when the script should run. Here is an example crontab line that will run the Forecast script every day, every 6 hours: 
 
-0 0,6,12,18 * * * sudo /usr/bin/python3 /home/pi/rain_sensor/forecast.py | logger -p local3.info
+0 0,6,12,18 * * * /usr/bin/python3 /home/pi/rain_sensor/forecast.py 2>&1 | /usr/bin/logger -t forecast
 
 The format for this config line is: [minute] [hour (0-23)] [day of month (1-31)] [month (1-12)] [day of week (0-6)] [command to run]"
 read -p "Press Enter key to continue."
