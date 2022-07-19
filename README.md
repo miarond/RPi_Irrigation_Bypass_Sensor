@@ -255,8 +255,8 @@ The following is a directory tree structure that illustrates the files installed
 |             └─── gpio_cleanup.py
 |             └─── db.json
 |             └─── .env
-|        └─── templates
-|             └─── index.html
+|             └─── templates
+|                  └─── index.html
 └─── etc
      └─── systemd
           └─── system

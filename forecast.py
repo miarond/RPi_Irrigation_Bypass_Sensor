@@ -109,7 +109,7 @@ def eval_forecast(data):
         logging.info(f'Forecast Interval: {forecast["dt_txt"]} UTC')
         logging.info(f'Forecast Probability of Precipitation: {100 * forecast["pop"]}%')
     db.insert({'forecast_data': forecast_list})
-    logging.debug(f'Inserting forecast data into DB: {forecast_list}')
+    logging.info(f'Inserting forecast data into DB: {forecast_list}')
     return irr_state
 
 
