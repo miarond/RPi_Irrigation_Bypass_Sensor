@@ -272,9 +272,7 @@ if __name__ == '__main__':
         logging.info(f'**** Irrigation Enable Requested ****')
     db_set_irr_state(override_state)
     result = change_sensor_state(override_state)
-    if result:
-        logging.info(f'#### Irrigation State Changed ####')
-    else:
+    if not result:
         logging.info(f'!!!! Irrigation State Failed To Change !!!!')
     send_email(override_state, result)
     db.close()
