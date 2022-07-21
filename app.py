@@ -88,6 +88,13 @@ def forecast_data():
     result = result + data
     return result
 
+@app.after_request
+def add_header(r):
+    r.headers["Cache-Control"] = "no-store"
+    r.headers["Pragma"] = "no-cache"
+    r.headers["Expires"] = "0"
+    return r
+
 
 if __name__ == "__main__":
     log_setup(os.getenv('RAIN_SENSOR_LOG', 'ERROR').lower())
