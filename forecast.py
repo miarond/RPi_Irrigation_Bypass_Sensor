@@ -100,6 +100,7 @@ def get_forecast():
 
 
 def eval_forecast(data):
+    global forecast_list
     forecast_list = []
     irr_state = True
     for forecast in data['list'][0:intervals]:
@@ -113,11 +114,27 @@ def eval_forecast(data):
     return irr_state
 
 
+def check_override():
+    # Check manual override status; send email and abort if enabled
+    ovr_db = TinyDB('/home/pi/rain_sensor/override.json')
+    override_state = ovr_db.all()
+    ovr_db.close()
+    logging.info(f'Manual override state: {override_state}')
+    if len(override_state) > 0:
+        if override_state[0]['override']:
+            logging.info(f'Manual override in place, bypassing forecast logic: {override_state}')
+            message = compose_email(override=override_state[0]['override'])
+            send_email(message)
+            sys.exit(0)
+    return
+
+
 def eval_override_logic(irr_state):
     # params irr_state: Boolean settings for state of Normally Closed Relay
     # return irr_state: Evaluated and possibly updated state setting
     # Evaluates whether rain has occurred within 12 hours of the next irrigation event, sets status accordingly
     # If evaluated forecast calls for rain and irrigation should be bypassed, proceed.
+
     if irr_state is False:
         return irr_state
 
@@ -231,13 +248,28 @@ def change_api(url, state):
         return response.text
 
 
-def send_email(override_state, bypass_result):
-    # Skip sending email if nothing has changed, and no relay change failure is detected
-    if (current == 'ON' and override_state is True) or (current == 'OFF' and override_state is False):
-        logging.info(f'No change between requested state ({override_state}) and current state ({current}).')
-        logging.info(f'Bypass result was: {bypass_result}')
-        return
-        
+def compose_email(**kwargs):
+    # Args:
+    #   irr_state: Irrigation state from forecast prediction (bool)
+    #   bypass_state: Evaluated override irrigation state (bool)
+    #   bypass_result: Result of state change attempt (bool, False = unknown failure)
+    #   forecast: Forecast data collected
+    #   override: Manual override state (bool)
+    now = dt.datetime.now(dt.timezone.utc)
+    message = f'Subject: Irrigation Bypass Results\n\n'
+    message += f'Current date/time: {now}\n'
+
+    if 'override' in kwargs.keys():
+        message += f'Irrigation system is set to manual override! Override state: {kwargs["override"]}\n'
+        return message
+    else:
+        message += f'Forecast predicted irrigation state: {kwargs["irr_state"]}\n'
+        message += f'Evaluated override irrigation state: {kwargs["bypass_state"]}\n'
+        message += f'Bypass result: {kwargs["bypass_result"]}\n'
+        message += f'Forecast data: {json.dumps(kwargs["forecast"], indent=4)}\n'
+        return message
+
+def send_email(message):
     smtp = smtplib.SMTP('smtp.gmail.com', 587)
     try:
         smtp.starttls()
@@ -249,14 +281,9 @@ def send_email(override_state, bypass_result):
     except Exception as e:
         logging.warning(f'SMTP Login failed: {e}')
         return
-    forecast = db.search(where('forecast_data').exists())[0]['forecast_data']
-    message = f'Subject: Irrigation Bypass Results\n\n' \
-        f'Forecast-predicted irrigation state: {irr_state}\n' \
-        f'Evaluated override irrigation state: {bypass_result}\n\n' \
-        f'Forecast weather data was: \n{json.dumps(forecast, indent=4)}'
     for dest in json.loads(os.getenv('OWM_GMAIL_RECIPIENT')):
         send_result = smtp.sendmail(os.getenv('OWM_GMAIL_USER'), dest, message)
-        logging.info(f'Email send result was: {send_result}')
+        logging.info(f'Email send result for {dest} was: {send_result}')
     smtp.close()
     return
 
@@ -264,6 +291,8 @@ def send_email(override_state, bypass_result):
 if __name__ == '__main__':
     data = get_forecast()
     irr_state = eval_forecast(data)
+    # Check for manual override, send email and abort if activated
+    check_override()
     override_state = eval_override_logic(irr_state)
     # If state is False, disable irrigation is requested
     if not override_state:
@@ -274,5 +303,8 @@ if __name__ == '__main__':
     result = change_sensor_state(override_state)
     if not result:
         logging.info(f'!!!! Irrigation State Failed To Change !!!!')
-    send_email(override_state, result)
+    # Check if we're trying to change the current state - only send email then
+    if current != override_state:
+        message = compose_email(irr_state=irr_state, bypass_state=override_state, bypass_result=result, forecast=forecast_list)
+        send_email(message)
     db.close()

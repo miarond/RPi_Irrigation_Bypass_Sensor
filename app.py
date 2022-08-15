@@ -3,7 +3,7 @@ import logging
 import time
 from flask import Flask, render_template, request
 import rain_sensor
-from tinydb import TinyDB, where
+from tinydb import TinyDB, where, Query
 from tabulate import tabulate
 
 host = os.getenv('FLASK_APP_HOST', '0.0.0.0')
@@ -87,6 +87,33 @@ def forecast_data():
     data = tabulate(forecast, tablefmt='html', headers=['Precip %', 'Date/Time'], numalign='left', stralign='left')
     result = result + data
     return result
+
+
+@app.route("/override", methods=["GET", "POST"])
+def override_irrigation():
+    if request.method == "GET":
+        db = TinyDB('override.json')
+        try:
+            state = db.search(where('override').exists())[0]['override']
+        except IndexError:
+            state = False
+        logging.info(f'Requested override status. Current status: {state}')
+        db.close()
+        if state:
+            return {'override': True}
+        else:
+            return {'override': False}
+    else:
+        db = TinyDB('override.json')
+        state = request.json.get('override')
+        status = Query()
+        result = db.upsert({'override': state}, status.override.exists())
+        db.close()
+        if 1 in result:
+            return ('', 204) 
+        else:
+            return ({'error': True, 'tinydb_result': result}, 500, {'Content-Type': 'application/json'})
+
 
 @app.after_request
 def add_header(r):

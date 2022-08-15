@@ -1,7 +1,8 @@
 #!/bin/sh
 # RPi Irrigation Bypass Sensor - Developed by Aron Donaldson
 
-cd /home/pi
+mkdir /home/pi/rain-sensor
+cd /home/pi/rain-sensor
 
 # Retrieve user-specific values that will be written to the webexapp.service file for use with systemd
 echo "Beginning setup. See https://github.com/miarond/RPi_Irrigation_Bypass_Sensor for full instructions."
@@ -29,6 +30,9 @@ crontab -e
 sudo mv rain-sensor.service /etc/systemd/system
 sudo systemctl daemon-reload
 sudo systemctl enable rain-sensor.service
+
+# Create override DB file
+touch override.db
 
 # Finally, reboot
 echo "Install complete. Rebooting..."

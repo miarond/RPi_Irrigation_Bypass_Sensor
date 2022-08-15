@@ -26,7 +26,8 @@
             </tr>
             <tr>
                 <td style="text-align:center">
-                    <button type="button" id="irr-toggle" style="height:35px;width:100px;background:green;color:white">On/Off</button>
+                    <button type="button" id="irr-toggle" style="height:35px;width:100px;background:green;color:white">On/Off</button><br><br>
+                    <label for="html">Override? </label><input type="checkbox" id="override" name="override">
                 </td>
                 <td style="text-align:center">
                     <div id="status"></div>
@@ -45,6 +46,15 @@
                     $("#status").html(response);
                 },
                 error: $("#status").html("UNKNOWN")
+            });
+            $.ajax({
+                url: "/override",
+                type: "GET",
+                success: function(response) {
+                    if( response.override === true ) {
+                        $("#override").prop('checked', true);
+                    }
+                },
             });
             $.ajax({
                 url: "/forecast",
@@ -84,6 +94,18 @@
                         });
                 });
             });
+            $("#override").click(function() {
+                $.ajax({
+                    url: "/override",
+                    type: "POST",
+                    data: JSON.stringify({"override": $("#override").prop('checked')}),
+                    contentType: "application/json",
+                    success: {},
+                    error: function(response) {
+                        alert(response)
+                    }
+                });
+           });
         });
     </script>
 </html>
