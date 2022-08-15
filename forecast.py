@@ -291,9 +291,9 @@ def send_email(message):
 if __name__ == '__main__':
     data = get_forecast()
     irr_state = eval_forecast(data)
+    override_state = eval_override_logic(irr_state)
     # Check for manual override, send email and abort if activated
     check_override()
-    override_state = eval_override_logic(irr_state)
     # If state is False, disable irrigation is requested
     if not override_state:
         logging.info(f'**** Irrigation Bypass Requested ****')
