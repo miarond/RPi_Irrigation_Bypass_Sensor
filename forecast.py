@@ -292,6 +292,7 @@ if __name__ == '__main__':
     data = get_forecast()
     irr_state = eval_forecast(data)
     override_state = eval_override_logic(irr_state)
+    db_set_irr_state(override_state)
     # Check for manual override, send email and abort if activated
     check_override()
     # If state is False, disable irrigation is requested
@@ -299,7 +300,6 @@ if __name__ == '__main__':
         logging.info(f'**** Irrigation Bypass Requested ****')
     else:
         logging.info(f'**** Irrigation Enable Requested ****')
-    db_set_irr_state(override_state)
     result = change_sensor_state(override_state)
     if not result:
         logging.info(f'!!!! Irrigation State Failed To Change !!!!')
