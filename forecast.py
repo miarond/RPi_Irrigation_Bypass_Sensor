@@ -304,7 +304,7 @@ if __name__ == '__main__':
     if not result:
         logging.info(f'!!!! Irrigation State Failed To Change !!!!')
     # Check if we're trying to change the current state - only send email then
-    if current != override_state:
+    if (current == 'OFF' and override_state is True) or (current == 'ON' and override_state is False) or (result is False):
         message = compose_email(irr_state=irr_state, bypass_state=override_state, bypass_result=result, forecast=forecast_list)
         send_email(message)
     db.close()
