@@ -13,5 +13,5 @@ RPi.GPIO==0.7.0
 tabulate==0.8.10
 tinydb==4.7.0
 urllib3==1.26.9
-Werkzeug==2.1.2
+Werkzeug==2.2.3
 zipp==3.8.0
